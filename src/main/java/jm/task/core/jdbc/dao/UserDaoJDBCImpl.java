@@ -1,16 +1,20 @@
 package jm.task.core.jdbc.dao;
+
 import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import org.hibernate.Transaction;
+
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoJDBCImpl implements UserDao {
 
-    Util util = new Util();
+
     Statement statement;
+    PreparedStatement preparedStatement;
+    Transaction transaction = null;
+    Connection connection = null;
     private final String create = "CREATE TABLE IF NOT EXISTS `mydb`.`users1` (\n" +
             "  `id` MEDIUMINT NOT NULL AUTO_INCREMENT,\n" +
             "  `name` VARCHAR(45) NULL,\n" +
@@ -19,13 +23,16 @@ public class UserDaoJDBCImpl implements UserDao {
             "  PRIMARY KEY (`id`))\n" +
             "ENGINE = InnoDB\n" +
             "DEFAULT CHARACTER SET = utf8;";
+
     public UserDaoJDBCImpl() {
 
     }
 
+    @Override
     public void createUsersTable() {
         try {
-            statement = util.getConnection().createStatement();
+            connection = Util.getConnection();
+            statement = connection.createStatement();
             statement.execute(create);
         } catch (SQLException e) {
             System.out.println("Ошибка создания таблицы!");
@@ -39,9 +46,11 @@ public class UserDaoJDBCImpl implements UserDao {
         }
     }
 
+    @Override
     public void dropUsersTable() {
         try {
-            statement = util.getConnection().createStatement();
+            connection = Util.getConnection();
+            statement = connection.createStatement();
             statement.execute("DROP TABLE IF EXISTS users1");
         } catch (SQLException e) {
             System.out.println("Ошибка удаления таблицы!");
@@ -55,35 +64,63 @@ public class UserDaoJDBCImpl implements UserDao {
         }
     }
 
-    public void saveUser(String name, String lastName, byte age) {
-        String exeUp = String.format("INSERT INTO users1 (name, lastName, age) VALUES ('%s','%s',%s)", name, lastName, age);
+    @Override
+    public void saveUser(String name1, String lastName1, byte age1) {
+        String exeUp = "INSERT INTO users1 (name, lastName, age) VALUES (?,?,?)";
         try {
-            statement = util.getConnection().createStatement();
-            statement.executeUpdate(exeUp);
-            System.out.println("User с именем - " + name + " добавлен в базу данных ");
+            connection = Util.getConnection();
+            connection.setAutoCommit(false);
+            preparedStatement = connection.prepareStatement(exeUp);
+            preparedStatement.setString(1, name1);
+            preparedStatement.setString(2, lastName1);
+            preparedStatement.setInt(3, age1);
+            preparedStatement.executeUpdate();
+            System.out.println("User с именем - " + name1 + " добавлен в базу данных ");
+            connection.commit();
         } catch (SQLException e) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                    System.out.println("Транзакция откатывается назад");
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
             e.printStackTrace();
             System.out.println("Ошибка добавления User");
         } finally {
             try {
-                statement.close();
+                preparedStatement.close();
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
         }
     }
 
-    public void removeUserById(long id) {
-        String removeUser = String.format("DELETE FROM users1 WHERE id = %s",id);
+    @Override
+    public void removeUserById(long id1) {
+        String removeUser = "DELETE FROM users1 WHERE id = ?";
         try {
-            statement = util.getConnection().createStatement();
-            statement.executeUpdate(removeUser);
+            connection = Util.getConnection();
+            connection.setAutoCommit(false);
+            preparedStatement = connection.prepareStatement(removeUser);
+            preparedStatement.setLong(1, id1);
+            preparedStatement.executeUpdate();
+            connection.commit();
         } catch (SQLException e) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                    System.out.println("Транзакция откатывается назад");
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
             System.out.println("Ошибка удаления User по id!");
             e.printStackTrace();
         } finally {
             try {
-                statement.close();
+                preparedStatement.close();
             } catch (SQLException e) {
                 throw new RuntimeException();
             }
@@ -91,10 +128,12 @@ public class UserDaoJDBCImpl implements UserDao {
 
     }
 
+    @Override
     public List<User> getAllUsers() {
-        List <User> allUsers = new ArrayList<>();
+        List<User> allUsers = new ArrayList<>();
         try {
-            statement = util.getConnection().createStatement();
+            connection = Util.getConnection();
+            statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery("SELECT * FROM users1");
             while (resultSet.next()) {
                 User user = new User();
@@ -117,11 +156,23 @@ public class UserDaoJDBCImpl implements UserDao {
         return allUsers;
     }
 
+    @Override
     public void cleanUsersTable() {
         try {
-            statement = util.getConnection().createStatement();
+            connection = Util.getConnection();
+            connection.setAutoCommit(false);
+            statement = connection.createStatement();
             statement.executeUpdate("DELETE FROM users1");
+            connection.commit();
         } catch (SQLException e) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                    System.out.println("Транзакция откатывается назад");
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
             e.printStackTrace();
             System.out.println("ошибка очистки таблицы");
         } finally {
