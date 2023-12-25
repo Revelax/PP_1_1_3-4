@@ -3,16 +3,21 @@ package jm.task.core.jdbc.util;
 import jm.task.core.jdbc.model.User;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Environment;
+
 import java.util.Properties;
+
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.service.ServiceRegistry;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+
 public class Util {
     // реализуйте настройку соеденения с БД
     private static SessionFactory sessionFactory;
+
     public static SessionFactory getSessionFactory() {
         if (sessionFactory == null) {
             try {
@@ -40,6 +45,12 @@ public class Util {
             }
         }
         return sessionFactory;
+    }
+
+    public static void closeSessionFactory() {
+        if (!sessionFactory.isClosed()) {
+            sessionFactory.close();
+        }
     }
 
 
