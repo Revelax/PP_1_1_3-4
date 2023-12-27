@@ -13,9 +13,9 @@ import java.util.List;
 
 public class UserDaoJDBCImpl implements UserDao {
 
-    Statement statement;
-    PreparedStatement preparedStatement;
-    Connection connection = null;
+    private Statement statement;
+    private PreparedStatement preparedStatement;
+    private Connection connection = null;
     private final String create = "CREATE TABLE IF NOT EXISTS `mydb`.`users1` (\n" +
             "  `id` MEDIUMINT NOT NULL AUTO_INCREMENT,\n" +
             "  `name` VARCHAR(45) NULL,\n" +
