@@ -16,10 +16,9 @@ public class Util {
 
     public static Connection getConnection() {
         try {
-            connection = DriverManager.getConnection(URL, USER, PASSWORD);
-//            if (!connection.isClosed()) {
-//                System.out.println("Соединение с БД установлено!");
-//            }
+            if (connection == null) {
+                connection = DriverManager.getConnection(URL, USER, PASSWORD);
+            }
         } catch (SQLException e) {
             System.out.println("Не удалось установить соединение с БД!");
             e.printStackTrace();
