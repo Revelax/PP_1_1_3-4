@@ -10,10 +10,8 @@ import java.util.List;
 
 public class UserDaoJDBCImpl implements UserDao {
 
-
     Statement statement;
     PreparedStatement preparedStatement;
-    Transaction transaction = null;
     Connection connection = null;
     private final String create = "CREATE TABLE IF NOT EXISTS `mydb`.`users1` (\n" +
             "  `id` MEDIUMINT NOT NULL AUTO_INCREMENT,\n" +
